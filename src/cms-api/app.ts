@@ -1,6 +1,7 @@
 import express, {Express} from "express"
 import morgan from 'morgan'
 import CmsConfig from "./cms-config"
+import logger from "../shared/utils/logger";
 
 export class CmsApiApp {
     private _express: Express
@@ -27,7 +28,7 @@ export class CmsApiApp {
     private appListen(): void {
         const port = CmsConfig.CMS_PORT
         this._express.listen(port, () => {
-            console.log(`Server running in http://localhost:${port} `)
+            logger.debug(`Cms Api Server running in http://localhost:${port} `)
         })
     }
 }
