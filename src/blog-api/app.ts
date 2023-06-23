@@ -1,7 +1,6 @@
 import express, {Express} from "express"
 import morgan from 'morgan'
 import BlogConfig from "./blog-config"
-import logger from "../shared/utils/logger";
 
 export class BlogApiApp {
     private _express: Express
@@ -28,7 +27,7 @@ export class BlogApiApp {
     private appListen(): void {
         const port = BlogConfig.BLOG_PORT
         this._express.listen(port, () => {
-            logger.debug(`Blog Api Server running in http://localhost:${port}`)
+            console.log(`Server running in http://localhost:${port} `)
         })
     }
 }

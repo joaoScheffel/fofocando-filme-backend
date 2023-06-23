@@ -3,13 +3,12 @@ import dotenv from "dotenv"
 export default class Config {
     static NODE_ENV: string
     static DATABASE_URL: string
-    static LOG_LEVEL: string
 
     static load(): void {
         dotenv.config()
 
-        this.NODE_ENV = process.env.NODE_ENV || null
-        this.DATABASE_URL = process.env.DATABASE_URL || null
+        this.NODE_ENV = process.env.NODE_ENV || "development"
+        this.DATABASE_URL = process.env.DATABASE_URL || ""
 
         this.validate()
     }
