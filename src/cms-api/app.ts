@@ -1,8 +1,9 @@
 import express, {Express} from "express"
 import morgan from 'morgan'
-import CmsConfig from "./cms.config"
+import CmsConfig from "./config/cms.config"
 import logger from "../shared/utils/logger";
 import {DbConfig} from "../shared/db/db.config";
+import {RequestErrorMiddleware} from "../shared/middlewares/request-error.middleware";
 
 export class CmsApiApp {
     private _express: Express
@@ -20,6 +21,8 @@ export class CmsApiApp {
 
         this.startDb()
 
+        //This middleware must be fixed before appListen
+        this._express.use(new RequestErrorMiddleware().validateErrors)
         this.appListen()
     }
 

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import logger from "../utils/logger";
-import Config from "../config";
+import Config from "../config/config";
 
 export class DbConfig {
     protected _uri: string

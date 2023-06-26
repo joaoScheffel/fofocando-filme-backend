@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import Config from "../shared/config"
+import Config from "../../shared/config/config"
 
 export default class BlogConfig extends Config{
     static BLOG_PORT: number
