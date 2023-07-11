@@ -12,6 +12,7 @@ export interface IUser extends TimesTamps{
     password: string
     passwordUpdatedAt: Date
     typePermission: IUserPermission
+    isGoogleLogin: boolean
 }
 
 

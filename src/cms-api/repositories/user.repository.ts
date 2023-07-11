@@ -36,6 +36,9 @@ const userSchema: Schema = new Schema<IUser>({
     passwordUpdatedAt: {
         type: Date
     },
+    isGoogleLogin: {
+        type: Boolean
+    }
 })
 
 const userCollection = model<IUser>('userCollection', userSchema, 'users')
