@@ -1,5 +1,9 @@
-import {BlogApiApp} from "./blog-api/app";
-import {CmsApiApp} from "./cms-api/app";
+import {blogApiApp, cmsApiApp} from "./instances";
 
-new BlogApiApp()
-new CmsApiApp()
+try {
+    cmsApiApp.mainConfiguration()
+    blogApiApp.mainConfiguration()
+} catch (e) {
+    console.log('[INDEX]: Uncaught error!')
+    console.log(e)
+}

@@ -4,18 +4,44 @@ class Logger {
     private logger: winston.Logger;
 
     constructor() {
+        const upperCaseLevelFormat = winston.format(info => {
+            info.level = info.level.toUpperCase();
+            return info;
+        });
+
+        const consoleFormat = winston.format.combine(
+            upperCaseLevelFormat(),
+            winston.format.colorize({ all: true }),
+            winston.format.timestamp(),
+            winston.format.printf(({ timestamp, level, message }) => {
+                const date: Date = new Date(timestamp)
+                date.setHours(date.getHours() - 3)
+
+                return `[${level}] [${date.toISOString()}]: ${message}`
+            }),
+        );
+
+        const fileFormat = winston.format.combine(
+            upperCaseLevelFormat(),
+            winston.format.timestamp(),
+            winston.format.printf(({ timestamp, level, message }) => {
+                const date: Date = new Date(timestamp)
+                date.setHours(date.getHours() - 3)
+
+                return `[${level}] [${date.toISOString()}]: ${message}`
+            }),
+        );
+
         this.logger = winston.createLogger({
             level: 'debug',
-            format: winston.format.combine(
-                winston.format.colorize({ all: true }),
-                winston.format.timestamp(),
-                winston.format.printf(({ timestamp, level, message }) => {
-                    return `[${level}] [${timestamp}]: ${message}`;
-                }),
-            ),
             transports: [
-                new winston.transports.Console(),
-                new winston.transports.File({ filename: 'backend.log' }),
+                new winston.transports.Console({
+                    format: consoleFormat,
+                }),
+                new winston.transports.File({
+                    filename: 'backend.log',
+                    format: fileFormat,
+                }),
             ],
         });
     }

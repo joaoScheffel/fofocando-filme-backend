@@ -11,10 +11,9 @@ export class BlogApiApp {
 
     constructor() {
         this._express = express()
-        this.mainConfiguration()
     }
 
-    private mainConfiguration(): void {
+    mainConfiguration(): void {
         BlogConfig.load()
 
         this.middlewares()

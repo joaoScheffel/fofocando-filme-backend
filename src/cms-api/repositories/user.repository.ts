@@ -5,7 +5,8 @@ import {ServerError} from "../../shared/errors/server-error";
 const userSchema: Schema = new Schema<IUser>({
     userUuid: {
         type: String,
-        required: [true, "the 'userUuid' in userSchema must be informed!"]
+        required: [true, "the 'userUuid' in userSchema must be informed!"],
+        unique: true
     },
     username: {
       type: String,
@@ -13,11 +14,8 @@ const userSchema: Schema = new Schema<IUser>({
     },
     email: {
         type: String,
-        required: [true, "the 'email' in userSchema must be informed!"]
-    },
-    password: {
-        type: String,
-        required: [true, "the 'password' in userSchema must be informed!"]
+        required: [true, "the 'email' in userSchema must be informed!"],
+        unique: true
     },
     typePermission: {
         type: String,
@@ -27,24 +25,20 @@ const userSchema: Schema = new Schema<IUser>({
         type: Date,
         required: [true, "the 'lastActivity' in userSchema must be informed!"]
     },
-    telephone: {
-        type: String,
-    },
     photoUrl: {
         type: String,
     },
-    passwordUpdatedAt: {
-        type: Date
-    },
-    isGoogleLogin: {
-        type: Boolean
+    googleSub: {
+        type: String,
+        required: [true, "the 'googleSub' in userSchema must be informed!"],
+        unique: true
     }
-})
+}, {timestamps: true})
 
 const userCollection = model<IUser>('userCollection', userSchema, 'users')
 
 export class UserRepository {
-    async insertNewRefreshToken(config: IUser): Promise<IUser> {
+    async insertNewUser(config: IUser): Promise<IUser> {
         if (!config) {
             throw new ServerError('UserRepository.insertNewRefreshToken at !config')
         }
@@ -58,5 +52,13 @@ export class UserRepository {
         }
 
         return userCollection.findOne({userUuid: userUuid})
+    }
+
+    async findOneBySub (sub: string): Promise<IUser> {
+        if (!sub) {
+            throw new ServerError('UserRepository.insertNewRefreshToken at !email')
+        }
+
+        return userCollection.findOne({googleSub: sub})
     }
 }

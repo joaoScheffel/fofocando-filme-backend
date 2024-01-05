@@ -6,6 +6,8 @@ export default class CmsConfig extends Config{
     static CMS_API_KEY: string
     static JWT_SECRET: string
     static GOOGLE_OAUTH_ID: string
+    static GOOGLE_OAUTH_SECRET: string
+    static NODE_ENV: string
 
     static load(): void {
         dotenv.config()
@@ -13,6 +15,8 @@ export default class CmsConfig extends Config{
         this.CMS_API_KEY = process.env.CMS_API_KEY || null
         this.JWT_SECRET = process.env.JWT_SECRET || null
         this.GOOGLE_OAUTH_ID = process.env.GOOGLE_OAUTH_ID || null
+        this.GOOGLE_OAUTH_SECRET = process.env.GOOGLE_OAUTH_SECRET || null
+        this.NODE_ENV = process.env.NODE_ENV || null
 
         this.validateCmsConfig()
     }
@@ -21,7 +25,10 @@ export default class CmsConfig extends Config{
         const requiredVariables = [
             "CMS_PORT",
             "CMS_API_KEY",
-            "JWT_SECRET"
+            "JWT_SECRET",
+            "GOOGLE_OAUTH_ID",
+            "GOOGLE_OAUTH_SECRET",
+            "NODE_ENV"
         ]
 
         for (const variable of requiredVariables) {

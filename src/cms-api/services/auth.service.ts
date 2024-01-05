@@ -1,90 +1,67 @@
-import {JsonWebTokenError, verify, sign} from "jsonwebtoken";
+import {Request, Response} from "express";
+import {GoogleApiService} from "./google-api.service";
+import {TokenPayload} from "google-auth-library";
+import {GetTokenResponse} from "google-auth-library/build/src/auth/oauth2client";
+import {IAuthRedirectQueryParams} from "../config/auth.config";
 import {ServerError} from "../../shared/errors/server-error";
 import {UnauthorizedError} from "../../shared/errors/unauthorized-error";
-import {IAuthJwt} from "../config/auth.config";
-import CmsConfig from "../config/cms.config";
-import {RefreshTokenRepository} from "../repositories/refresh-token.repository";
-import {IRefreshToken} from "../types/refresh-token.types";
-import {v4 as uuidV4} from 'uuid'
+import {authTokenRepository, googleApiService, userRepository, userService} from "../../instances";
+import {parseQueryParams} from "../../shared/utils/string.utils";
 import {UserRepository} from "../repositories/user.repository";
+import {IUser} from "../types/user.types";
+import {BadRequestError} from "../../shared/errors/bad-request-error";
+import {UserService} from "./user.service";
+import {AuthTokenRepository} from "../repositories/auth-token.repository";
+import {IAuthTokens} from "../types/auth-token.types";
 
 export class AuthService {
-    private refreshTokenRepository: RefreshTokenRepository
+    private googleApiService: GoogleApiService
     private userRepository: UserRepository
+    private userService: UserService
+    private authTokenRepository: AuthTokenRepository
 
     constructor() {
-        this.refreshTokenRepository = new RefreshTokenRepository()
-        this.userRepository = new UserRepository()
+        this.googleApiService = googleApiService
+        this.userRepository = userRepository
+        this.userService = userService
+        this.authTokenRepository = authTokenRepository
     }
 
-    async createAccessToken(payload: IAuthJwt): Promise<string> {
-        if (!payload) {
-            throw new ServerError('AuthService.createAccessToken at !payload')
-        }
+   async validateAuthLogin(req: Request, res: Response): Promise<string> {
+       let queryParams: IAuthRedirectQueryParams
 
-        if (!await this.userRepository.findOneByUserUuid(payload?.userUuid)) {
-            throw new ServerError('AuthService.createAccessToken at !await this.userRepository.findOneByUserUuid(payload.userUuid')
-        }
+       try {
+           queryParams = parseQueryParams(req.url)
 
-        const expirationDate = new Date();
-        expirationDate.setHours(expirationDate.getHours() + 1);
+       } catch (e) {
+           throw new BadRequestError('Invalid url')
+       }
 
-        const refreshTokenToSave: IRefreshToken = {
-            userUuid: payload.userUuid,
-            refreshToken: payload.refreshToken,
-            expiresIn: expirationDate
-        }
+       if (!queryParams?.code) {
+           throw new BadRequestError('Invalid code parameter')
+       }
 
-        await this.refreshTokenRepository.insertNewRefreshToken(refreshTokenToSave)
+       const tokenResponse: GetTokenResponse = await this.googleApiService.verifyCode(queryParams.code)
 
-        return sign(payload, CmsConfig.JWT_SECRET, {expiresIn: '1h'})
-    }
+       if (!tokenResponse?.tokens?.access_token) {
+           throw new UnauthorizedError('User access token not found')
+       }
 
-    private async verifyToken(token: string): Promise<IAuthJwt> {
-        if (!token) {
-            throw new ServerError('AuthService.verifyToken at !token')
-        }
-        let verifiedToken: IAuthJwt
+       const payload: TokenPayload = await this.googleApiService.getPayloadFromTokenResponse(tokenResponse)
 
-        try {
-            verifiedToken = verify(token, CmsConfig.JWT_SECRET) as IAuthJwt
-        } catch (error) {
-            if (error instanceof JsonWebTokenError && error.message === 'jwt expired') {
-                throw new UnauthorizedError('Expired access token');
-            } else {
-                throw new UnauthorizedError('Invalid access token');
-            }
-        }
+       const user: IUser = await this.userService.createOrGetUserByTokenPayload(payload)
 
-        if (!await this.userRepository.findOneByUserUuid(verifiedToken?.userUuid)) {
-            await this.refreshTokenRepository.deleteOneRefreshTokenByUserUuid(verifiedToken?.userUuid)
-            throw new UnauthorizedError('User not found')
-        }
+       if (!user) {
+           throw new ServerError('AuthService.validateAuthLogin at !user')
+       }
 
-        return verifiedToken
-    }
+       const authToken: IAuthTokens = {
+           ...tokenResponse.tokens,
+           userUuid: user.userUuid
+       }
 
-    private async refreshToken(refreshToken: string): Promise<string> {
-        if (!refreshToken) {
-            throw new ServerError('AuthService.refreshToken at !refreshToken')
-        }
+       await this.authTokenRepository.upsertAuthToken(authToken)
 
-        const token: IRefreshToken = await this.refreshTokenRepository.findOneRefreshToken(refreshToken)
-
-        if (!token || token.expiresIn > new Date()) {
-            await this.refreshTokenRepository.deleteOneRefreshToken(refreshToken)
-            throw new UnauthorizedError('Expired refresh token, please login again');
-        }
-
-        if (!await this.userRepository.findOneByUserUuid(token?.userUuid)) {
-            throw new UnauthorizedError('User not found')
-        }
-
-        const payload: IAuthJwt = {
-            refreshToken: uuidV4(),
-            userUuid: token.userUuid
-        }
-
-        return this.createAccessToken(payload)
-    }
+       return tokenResponse.tokens.id_token
+   }
 }

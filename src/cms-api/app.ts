@@ -1,9 +1,11 @@
+import 'express-async-errors'
 import express, {Express} from "express"
 import morgan from 'morgan'
 import CmsConfig from "./config/cms.config"
 import logger from "../shared/utils/logger";
 import {DbConfig} from "../shared/db/db.config";
 import {RequestErrorMiddleware} from "../shared/middlewares/request-error.middleware";
+import {Routes} from "./routes";
 
 export class CmsApiApp {
     private _express: Express
@@ -11,15 +13,16 @@ export class CmsApiApp {
 
     constructor() {
         this._express = express()
-        this.mainConfiguration()
     }
 
-    private mainConfiguration(): void {
+    mainConfiguration(): void {
         CmsConfig.load()
 
         this.middlewares()
 
         this.startDb()
+
+        this.startRoutes()
 
         //This middleware must be fixed before appListen
         this._express.use(new RequestErrorMiddleware().validateErrors)
@@ -36,6 +39,12 @@ export class CmsApiApp {
 
     private startDb() {
         new DbConfig(this.apiName)
+    }
+
+    private startRoutes() {
+        logger.debug(`Setting ${this.apiName} routes!`)
+        this._express.use(new Routes().mainConfiguration)
+        logger.info(`Successfully configured ${this.apiName} routes!`)
     }
 
     private appListen(): void {

@@ -1,6 +1,6 @@
-import CmsConfig from "./cms.config";
-
-export interface IAuthJwt {
-    userUuid: string,
-    refreshToken: string,
+export interface IAuthRedirectQueryParams {
+    code?: string
+    scope?: string
+    authuser?: string
+    prompt?: string
 }
